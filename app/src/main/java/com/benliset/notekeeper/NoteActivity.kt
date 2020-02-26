@@ -6,11 +6,19 @@ import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.Spinner
 
 import kotlinx.android.synthetic.main.activity_main.*
 
 class NoteActivity : AppCompatActivity() {
+
+    companion object {
+        val NOTE_INFO = "com.benliset.notekeeper.NOTE_INFO"
+    }
+
+    private var note: NoteInfo? = null
+    private var isNewNote = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,6 +31,28 @@ class NoteActivity : AppCompatActivity() {
         val adapterCourses = ArrayAdapter<CourseInfo>(this, android.R.layout.simple_spinner_item, courses)
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCourses.adapter = adapterCourses
+
+        readDisplayStateValues()
+
+        val textNoteTitle = findViewById<EditText>(R.id.text_note_title)
+        val textNoteText = findViewById<EditText>(R.id.text_note_text)
+
+        if (!isNewNote) {
+            displayNote(spinnerCourses, textNoteTitle, textNoteText)
+        }
+    }
+
+    private fun displayNote(spinnerCourses: Spinner?, textNoteTitle: EditText?, textNoteText: EditText?) {
+        val courses = DataManager.instance.courses
+        val courseIndex = courses.indexOf(note?.course)
+        spinnerCourses?.setSelection(courseIndex)
+        textNoteTitle?.setText(note?.title)
+        textNoteText?.setText(note?.text)
+    }
+
+    private fun readDisplayStateValues() {
+        note = intent.getParcelableExtra(NOTE_INFO)
+        isNewNote = note == null
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

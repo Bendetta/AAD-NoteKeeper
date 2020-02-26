@@ -1,8 +1,17 @@
 package com.benliset.notekeeper
 
-class NoteInfo(var course: CourseInfo?, var title: String?, var text: String?) {
+import android.os.Parcel
+import android.os.Parcelable
+
+class NoteInfo(var course: CourseInfo?, var title: String?, var text: String?) : Parcelable {
 
     private val compareKey: String = course?.courseId + "|" + title + "|" + text
+
+    private constructor(parcel: Parcel) : this(
+        parcel.readParcelable(CourseInfo::class.java.classLoader),
+        parcel.readString(),
+        parcel.readString()
+    )
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
@@ -19,4 +28,23 @@ class NoteInfo(var course: CourseInfo?, var title: String?, var text: String?) {
         return compareKey
     }
 
+    override fun describeContents(): Int {
+       return 0
+    }
+
+    override fun writeToParcel(dest: Parcel?, flags: Int) {
+        dest?.writeParcelable(course, 0)
+        dest?.writeString(title)
+        dest?.writeString(text)
+    }
+
+    companion object CREATOR : Parcelable.Creator<NoteInfo> {
+        override fun createFromParcel(parcel: Parcel): NoteInfo {
+            return NoteInfo(parcel)
+        }
+
+        override fun newArray(size: Int): Array<NoteInfo?> {
+            return arrayOfNulls(size)
+        }
+    }
 }
