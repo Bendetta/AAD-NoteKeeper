@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 
 import kotlinx.android.synthetic.main.activity_note_list.*
@@ -33,8 +32,7 @@ class NoteListActivity : AppCompatActivity() {
         
         listNotes.setOnItemClickListener { parent, view, position, id ->
             val intent = Intent(this, NoteActivity::class.java)
-            val note = listNotes.getItemAtPosition(position) as NoteInfo
-            intent.putExtra(NoteActivity.NOTE_INFO, note)
+            intent.putExtra(NoteActivity.NOTE_POSITION, position)
             startActivity(intent)
         }
     }
