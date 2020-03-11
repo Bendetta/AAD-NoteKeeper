@@ -10,6 +10,8 @@ import kotlinx.android.synthetic.main.activity_note_list.*
 
 class NoteListActivity : AppCompatActivity() {
 
+    var adapterNotes: ArrayAdapter<NoteInfo>? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_note_list)
@@ -22,11 +24,16 @@ class NoteListActivity : AppCompatActivity() {
         initializeDisplayContent()
     }
 
+    override fun onResume() {
+        super.onResume()
+        adapterNotes?.notifyDataSetChanged()
+    }
+
     private fun initializeDisplayContent() {
         val listNotes = findViewById<ListView>(R.id.list_notes)
 
         val notes = DataManager.instance.notes
-        val adapterNotes = ArrayAdapter<NoteInfo>(this, android.R.layout.simple_list_item_1, notes)
+        adapterNotes = ArrayAdapter(this, android.R.layout.simple_list_item_1, notes)
 
         listNotes.adapter = adapterNotes
         

@@ -8,6 +8,7 @@ import android.view.MenuItem
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Spinner
+import androidx.lifecycle.ViewModelProvider
 
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -23,6 +24,8 @@ class NoteActivity : AppCompatActivity() {
     private var isNewNote = true
     private var notePosition = POSITION_NOT_SET
     private var isCancelling = false
+
+    private var viewModel = NoteActivityViewModel()
 
     private val spinnerCourses: Spinner by lazy {
         val spinnerCourses = findViewById<Spinner>(R.id.spinner_courses)
@@ -45,18 +48,37 @@ class NoteActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
+        val viewModelProvider = ViewModelProvider(viewModelStore, ViewModelProvider.AndroidViewModelFactory.getInstance(application))
+        viewModel = viewModelProvider.get(NoteActivityViewModel::class.java)
+
+        if (viewModel.isNewlyCreated && savedInstanceState != null) {
+            viewModel.restoreState(savedInstanceState!!)
+        }
+        viewModel.isNewlyCreated = false
+
         val courses = DataManager.instance.courses
         val adapterCourses = ArrayAdapter<CourseInfo>(this, android.R.layout.simple_spinner_item, courses)
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCourses.adapter = adapterCourses
 
         readDisplayStateValues()
+        saveOriginalNoteValues()
 
         if (isNewNote) {
             createNewNote()
         } else {
             displayNote(spinnerCourses, textNoteTitle, textNoteText)
         }
+    }
+
+    private fun saveOriginalNoteValues() {
+        if (isNewNote) {
+            return
+        }
+
+        viewModel.originalCourseNoteId = note?.course?.courseId
+        viewModel.originalNoteTitle = note?.title
+        viewModel.originalNoteText = note?.text
     }
 
     private fun createNewNote() {
@@ -70,10 +92,24 @@ class NoteActivity : AppCompatActivity() {
         if (isCancelling) {
             if (isNewNote) {
                 DataManager.instance.removeNote(notePosition)
+            } else {
+                storePreviousNoteValues()
             }
         } else {
             saveNote()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        viewModel.saveState(outState)
+    }
+
+    private fun storePreviousNoteValues() {
+        val course = DataManager.instance.getCourse(viewModel.originalCourseNoteId!!)
+        note?.course = course
+        note?.title = viewModel.originalNoteTitle
+        note?.text = viewModel.originalNoteText
     }
 
     private fun saveNote() {
