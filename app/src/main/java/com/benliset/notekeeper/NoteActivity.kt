@@ -2,6 +2,7 @@ package com.benliset.notekeeper
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
@@ -18,6 +19,7 @@ class NoteActivity : AppCompatActivity() {
         val NOTE_POSITION = "com.benliset.notekeeper.NOTE_POSITION"
     }
 
+    private val TAG = javaClass.simpleName
     private val POSITION_NOT_SET = -1
 
     private var note: NoteInfo? = null
@@ -64,11 +66,9 @@ class NoteActivity : AppCompatActivity() {
         readDisplayStateValues()
         saveOriginalNoteValues()
 
-        if (isNewNote) {
-            createNewNote()
-        } else {
-            displayNote(spinnerCourses, textNoteTitle, textNoteText)
-        }
+        displayNote(spinnerCourses, textNoteTitle, textNoteText)
+
+        Log.d(TAG, "onCreate")
     }
 
     private fun saveOriginalNoteValues() {
@@ -82,14 +82,13 @@ class NoteActivity : AppCompatActivity() {
     }
 
     private fun createNewNote() {
-        val dm = DataManager.instance
-        notePosition = dm.createNewNote()
-        note = dm.notes[notePosition]
+        notePosition = DataManager.instance.createNewNote()
     }
 
     override fun onPause() {
         super.onPause()
         if (isCancelling) {
+            Log.i(TAG, "Cancelling note at position $notePosition")
             if (isNewNote) {
                 DataManager.instance.removeNote(notePosition)
             } else {
@@ -98,6 +97,8 @@ class NoteActivity : AppCompatActivity() {
         } else {
             saveNote()
         }
+
+        Log.d(TAG, "onPause")
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -127,11 +128,14 @@ class NoteActivity : AppCompatActivity() {
     }
 
     private fun readDisplayStateValues() {
-        val position = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET)
-        isNewNote = position == POSITION_NOT_SET
-        if (!isNewNote) {
-            note = DataManager.instance.notes[position]
+        notePosition = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET)
+        isNewNote = notePosition == POSITION_NOT_SET
+        if (isNewNote) {
+            createNewNote()
         }
+
+        Log.i(TAG, "notePosition: $notePosition")
+        note = DataManager.instance.notes[notePosition]
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

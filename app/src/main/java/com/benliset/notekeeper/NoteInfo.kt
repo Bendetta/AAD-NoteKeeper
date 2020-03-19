@@ -5,7 +5,9 @@ import android.os.Parcelable
 
 class NoteInfo(var course: CourseInfo?, var title: String?, var text: String?) : Parcelable {
 
-    private val compareKey: String by lazy { course?.courseId + "|" + title + "|" + text }
+    private val compareKey: String
+        get() = course?.courseId + "|" + title + "|" + text
+
 
     private constructor(parcel: Parcel) : this(
         parcel.readParcelable(CourseInfo::class.java.classLoader),
