@@ -12,7 +12,7 @@ class DataManager private constructor() {
     val currentUserEmail: String
         get() = "jimw@jwhh.com"
 
-    val notes: List<NoteInfo>
+    val notes: MutableList<NoteInfo>
         get() = mNotes
 
     fun createNewNote(): Int {
@@ -322,6 +322,16 @@ class DataManager private constructor() {
         )
         return CourseInfo("java_core", "Java Fundamentals: The Core Platform", modules)
     } //endregion
+
+    fun createNewNote(course: CourseInfo?, noteTitle: String, noteText: String): Int {
+        val index = createNewNote()
+        val note = notes[index]
+        note.course = course
+        note.title = noteTitle
+        note.text = noteText
+
+        return index
+    }
 
     companion object {
         private var ourInstance: DataManager? = null
