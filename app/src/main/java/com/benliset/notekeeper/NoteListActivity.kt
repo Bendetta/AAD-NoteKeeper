@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 import kotlinx.android.synthetic.main.activity_note_list.*
 
 class NoteListActivity : AppCompatActivity() {
 
-    var adapterNotes: ArrayAdapter<NoteInfo>? = null
+    lateinit var noteRecyclerAdapter: NoteRecyclerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,22 +28,17 @@ class NoteListActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        adapterNotes?.notifyDataSetChanged()
+        noteRecyclerAdapter.notifyDataSetChanged()
     }
 
     private fun initializeDisplayContent() {
-        val listNotes = findViewById<ListView>(R.id.list_notes)
+        val recyclerNotes = findViewById<RecyclerView>(R.id.list_notes)
+        val notesLayoutManager = LinearLayoutManager(this)
+        recyclerNotes.layoutManager = notesLayoutManager
 
         val notes = DataManager.instance.notes
-        adapterNotes = ArrayAdapter(this, android.R.layout.simple_list_item_1, notes)
-
-        listNotes.adapter = adapterNotes
-        
-        listNotes.setOnItemClickListener { parent, view, position, id ->
-            val intent = Intent(this, NoteActivity::class.java)
-            intent.putExtra(NoteActivity.NOTE_POSITION, position)
-            startActivity(intent)
-        }
+        noteRecyclerAdapter = NoteRecyclerAdapter(this, notes)
+        recyclerNotes.adapter = noteRecyclerAdapter
     }
 
 }

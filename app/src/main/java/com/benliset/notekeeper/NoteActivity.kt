@@ -148,18 +148,38 @@ class NoteActivity : AppCompatActivity() {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        return when (item.itemId) {
+        when (item.itemId) {
             R.id.action_send_mail -> {
                 sendEmail()
-                true
             }
             R.id.action_cancel -> {
                 isCancelling = true
                 finish()
-                true
             }
-            else -> super.onOptionsItemSelected(item)
+            R.id.action_next -> {
+                moveNext()
+            }
         }
+
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        val item = menu?.findItem(R.id.action_next)
+        val lastNoteIndex = DataManager.instance.notes.size - 1
+        item?.isEnabled = notePosition < lastNoteIndex
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    private fun moveNext() {
+        saveNote()
+
+        notePosition++
+        note = DataManager.instance.notes[notePosition]
+
+        saveOriginalNoteValues()
+        displayNote(spinnerCourses, textNoteTitle, textNoteText)
+        invalidateOptionsMenu()
     }
 
     private fun sendEmail() {
