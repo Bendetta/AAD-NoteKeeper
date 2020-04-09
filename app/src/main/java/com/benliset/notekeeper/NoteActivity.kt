@@ -11,7 +11,7 @@ import android.widget.EditText
 import android.widget.Spinner
 import androidx.lifecycle.ViewModelProvider
 
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_note.*
 
 class NoteActivity : AppCompatActivity() {
 
@@ -47,7 +47,7 @@ class NoteActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_note)
         setSupportActionBar(toolbar)
 
         val viewModelProvider = ViewModelProvider(viewModelStore, ViewModelProvider.AndroidViewModelFactory.getInstance(application))
