@@ -12,7 +12,7 @@ import kotlinx.android.synthetic.main.activity_note_list.*
 
 class NoteListActivity : AppCompatActivity() {
 
-    lateinit var noteRecyclerAdapter: NoteRecyclerAdapter
+    private lateinit var noteRecyclerAdapter: NoteRecyclerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
