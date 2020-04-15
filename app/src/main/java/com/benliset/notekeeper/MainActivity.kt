@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun initializeDisplayContent() {
         recyclerNotes = findViewById<RecyclerView>(R.id.list_items)
         notesLayoutManager = LinearLayoutManager(this)
-        coursesLayoutManager = GridLayoutManager(this, 2)
+        coursesLayoutManager = GridLayoutManager(this, resources.getInteger(R.integer.course_grid_span))
         val notes = DataManager.instance.notes
         noteRecyclerAdapter = NoteRecyclerAdapter(this, notes)
 
@@ -108,10 +108,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 displayCourses()
             }
             R.id.nav_share -> {
-                handleSelection("Don't you think you've shared enough")
+                handleSelection(R.string.nav_share_message)
             }
             R.id.nav_send -> {
-                handleSelection("Send")
+                handleSelection(R.string.nav_send_message)
             }
         }
 
@@ -120,8 +120,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return true
     }
 
-    private fun handleSelection(message: String) {
+    private fun handleSelection(message_id: Int) {
         val view = findViewById<View>(R.id.list_items)
-        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show()
+        Snackbar.make(view, message_id, Snackbar.LENGTH_LONG).show()
     }
 }
