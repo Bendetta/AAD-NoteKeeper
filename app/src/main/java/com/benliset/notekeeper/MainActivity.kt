@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var recyclerNotes: RecyclerView
     private lateinit var notesLayoutManager: LinearLayoutManager
     private lateinit var coursesLayoutManager: GridLayoutManager
+    private lateinit var dbOpenHelper: NoteKeeperOpenHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        dbOpenHelper = NoteKeeperOpenHelper(this)
         val fab: FloatingActionButton = findViewById(R.id.fab)
         fab.setOnClickListener { view ->
             startActivity(Intent(this, NoteActivity::class.java))
@@ -46,6 +48,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navigationView.setNavigationItemSelectedListener(this)
 
         initializeDisplayContent()
+    }
+
+    override fun onDestroy() {
+        dbOpenHelper.close()
+        super.onDestroy()
     }
 
     override fun onResume() {
@@ -86,6 +93,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         recyclerNotes.layoutManager = notesLayoutManager
         recyclerNotes.adapter = noteRecyclerAdapter
 
+        val db = dbOpenHelper.readableDatabase
         selectNavigationMenuItem(R.id.nav_notes)
     }
 
