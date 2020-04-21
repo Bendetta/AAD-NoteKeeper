@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -13,6 +14,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -49,6 +51,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onResume() {
         super.onResume()
         noteRecyclerAdapter.notifyDataSetChanged()
+
+        updateNavHeader()
+    }
+
+    private fun updateNavHeader() {
+        val navigationView = findViewById<NavigationView>(R.id.nav_view)
+        val headerView = navigationView.getHeaderView(0)
+        val textUserName = headerView.findViewById<TextView>(R.id.text_user_name)
+        val textEmailAddress = headerView.findViewById<TextView>(R.id.text_email_address)
+
+        val pref = PreferenceManager.getDefaultSharedPreferences(this)
+        val userName = pref.getString("user_display_name", getString(R.string.pref_default_display_name))
+        val emailAddress = pref.getString("user_email_address", getString(R.string.pref_default_email_address))
+
+        textUserName.text = userName
+        textEmailAddress.text = emailAddress
     }
 
     private fun initializeDisplayContent() {
@@ -99,6 +117,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return true
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
             R.id.nav_notes -> {
@@ -108,7 +136,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 displayCourses()
             }
             R.id.nav_share -> {
-                handleSelection(R.string.nav_share_message)
+                handleShare()
             }
             R.id.nav_send -> {
                 handleSelection(R.string.nav_send_message)
@@ -118,6 +146,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
         drawer.closeDrawer(GravityCompat.START)
         return true
+    }
+
+    private fun handleShare() {
+        val view = findViewById<View>(R.id.list_items)
+        Snackbar.make(view,
+            "Share to - ${PreferenceManager.getDefaultSharedPreferences(this).getString("user_favorite_social", getString(R.string.pref_default_favorite_social))}",
+            Snackbar.LENGTH_LONG).show()
     }
 
     private fun handleSelection(message_id: Int) {

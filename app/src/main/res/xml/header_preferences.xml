@@ -1,0 +1,22 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Preference
+        app:fragment="com.benliset.notekeeper.SettingsActivity$GeneralFragment"
+        app:icon="@drawable/ic_info_black_24dp"
+        app:key="general_header"
+        app:title="General" />
+
+    <Preference
+        app:fragment="com.benliset.notekeeper.SettingsActivity$MessagesFragment"
+        app:icon="@drawable/messages"
+        app:key="messages_header"
+        app:title="@string/messages_header" />
+
+    <Preference
+        app:fragment="com.benliset.notekeeper.SettingsActivity$SyncFragment"
+        app:icon="@drawable/sync"
+        app:key="sync_header"
+        app:title="@string/sync_header" />
+
+</PreferenceScreen>
