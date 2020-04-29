@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun initializeDisplayContent() {
+        DataManager.loadFromDatabase(dbOpenHelper)
         recyclerNotes = findViewById<RecyclerView>(R.id.list_items)
         notesLayoutManager = LinearLayoutManager(this)
         coursesLayoutManager = GridLayoutManager(this, resources.getInteger(R.integer.course_grid_span))
@@ -93,7 +94,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         recyclerNotes.layoutManager = notesLayoutManager
         recyclerNotes.adapter = noteRecyclerAdapter
 
-        val db = dbOpenHelper.readableDatabase
         selectNavigationMenuItem(R.id.nav_notes)
     }
 
