@@ -356,7 +356,8 @@ class DataManager private constructor() {
             val noteColumns = arrayOf(
                 NoteInfoEntry.COLUMN_NOTE_TITLE,
                 NoteInfoEntry.COLUMN_NOTE_TEXT,
-                NoteInfoEntry.COLUMN_COURSE_ID
+                NoteInfoEntry.COLUMN_COURSE_ID,
+                NoteInfoEntry._ID
             )
             val noteOrderBy = "${NoteInfoEntry.COLUMN_COURSE_ID}, ${NoteInfoEntry.COLUMN_NOTE_TITLE}"
             val noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, noteOrderBy)
@@ -384,6 +385,7 @@ class DataManager private constructor() {
             val noteTitlePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE)
             val noteTextPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT)
             val courseIdPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID)
+            val idPos = cursor.getColumnIndex(NoteInfoEntry._ID)
 
             val dm = instance
             dm.notes.clear()
@@ -392,9 +394,10 @@ class DataManager private constructor() {
                 val noteTitle = cursor.getString(noteTitlePos)
                 val noteText = cursor.getString(noteTextPos)
                 val courseId = cursor.getString(courseIdPos)
+                val id = cursor.getInt(idPos)
 
                 val noteCourse = dm.getCourse(courseId)
-                val note = NoteInfo(noteCourse, noteTitle, noteText)
+                val note = NoteInfo(id, noteCourse, noteTitle, noteText)
                 dm.notes.add(note)
             }
             cursor.close()

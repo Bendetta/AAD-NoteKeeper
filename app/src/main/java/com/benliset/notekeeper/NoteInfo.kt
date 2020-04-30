@@ -3,11 +3,12 @@ package com.benliset.notekeeper
 import android.os.Parcel
 import android.os.Parcelable
 
-class NoteInfo(var course: CourseInfo?, var title: String?, var text: String?) : Parcelable {
+class NoteInfo(var id: Int?, var course: CourseInfo?, var title: String?, var text: String?) : Parcelable {
 
     private val compareKey: String
         get() = course?.courseId + "|" + title + "|" + text
 
+    constructor(course: CourseInfo?, title: String?, text: String?): this(null, course, title, text)
 
     private constructor(parcel: Parcel) : this(
         parcel.readParcelable(CourseInfo::class.java.classLoader),

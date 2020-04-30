@@ -1,6 +1,7 @@
 package com.benliset.notekeeper
 
 import android.content.Intent
+import android.database.Cursor
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -10,24 +11,32 @@ import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Spinner
 import androidx.lifecycle.ViewModelProvider
+import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 
 import kotlinx.android.synthetic.main.activity_note.*
+import kotlin.properties.Delegates
 
 class NoteActivity : AppCompatActivity() {
 
     companion object {
-        val NOTE_POSITION = "com.benliset.notekeeper.NOTE_POSITION"
+        val NOTE_ID = "com.benliset.notekeeper.NOTE_POSITION"
     }
 
     private val TAG = javaClass.simpleName
-    private val POSITION_NOT_SET = -1
+    private val ID_NOT_SET = -1
 
     private var note: NoteInfo? = null
     private var isNewNote = true
-    private var notePosition = POSITION_NOT_SET
+    private var noteId = ID_NOT_SET
     private var isCancelling = false
 
     private var viewModel = NoteActivityViewModel()
+
+    private val dbOpenHelper = NoteKeeperOpenHelper(this)
+    private lateinit var noteCursor: Cursor
+    private var courseIdPos by Delegates.notNull<Int>()
+    private var noteTitlePos by Delegates.notNull<Int>()
+    private var noteTextPos by Delegates.notNull<Int>()
 
     private val spinnerCourses: Spinner by lazy {
         val spinnerCourses = findViewById<Spinner>(R.id.spinner_courses)
@@ -66,9 +75,15 @@ class NoteActivity : AppCompatActivity() {
         readDisplayStateValues()
         saveOriginalNoteValues()
 
-        displayNote(spinnerCourses, textNoteTitle, textNoteText)
+        loadNoteData()
 
         Log.d(TAG, "onCreate")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        dbOpenHelper.close()
     }
 
     private fun saveOriginalNoteValues() {
@@ -81,16 +96,31 @@ class NoteActivity : AppCompatActivity() {
         viewModel.originalNoteText = note?.text
     }
 
+    private fun loadNoteData() {
+        val db = dbOpenHelper.readableDatabase
+
+        val selection = "${NoteInfoEntry._ID} = ?"
+        val selectionArgs = arrayOf(noteId.toString())
+
+        val noteColumns = arrayOf(NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_NOTE_TEXT)
+        noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, selection, selectionArgs, null, null, null)
+        courseIdPos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID)
+        noteTitlePos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE)
+        noteTextPos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT)
+        noteCursor.moveToNext()
+        displayNote()
+    }
+
     private fun createNewNote() {
-        notePosition = DataManager.instance.createNewNote()
+        noteId = DataManager.instance.createNewNote()
     }
 
     override fun onPause() {
         super.onPause()
         if (isCancelling) {
-            Log.i(TAG, "Cancelling note at position $notePosition")
+            Log.i(TAG, "Cancelling note at position $noteId")
             if (isNewNote) {
-                DataManager.instance.removeNote(notePosition)
+                DataManager.instance.removeNote(noteId)
             } else {
                 storePreviousNoteValues()
             }
@@ -119,23 +149,26 @@ class NoteActivity : AppCompatActivity() {
         note?.text = textNoteText.text.toString()
     }
 
-    private fun displayNote(spinnerCourses: Spinner?, textNoteTitle: EditText?, textNoteText: EditText?) {
+    private fun displayNote() {
+        val courseId = noteCursor.getString(courseIdPos)
+        val noteTitle = noteCursor.getString(noteTitlePos)
+        val noteText = noteCursor.getString(noteTextPos)
         val courses = DataManager.instance.courses
-        val courseIndex = courses.indexOf(note?.course)
+        val course = DataManager.instance.getCourse(courseId)
+        val courseIndex = courses.indexOf(course)
         spinnerCourses?.setSelection(courseIndex)
-        textNoteTitle?.setText(note?.title)
-        textNoteText?.setText(note?.text)
+        textNoteTitle?.setText(noteTitle)
+        textNoteText?.setText(noteText)
     }
 
     private fun readDisplayStateValues() {
-        notePosition = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET)
-        isNewNote = notePosition == POSITION_NOT_SET
+        noteId = intent.getIntExtra(NOTE_ID, ID_NOT_SET)
+        isNewNote = noteId == ID_NOT_SET
         if (isNewNote) {
             createNewNote()
         }
 
-        Log.i(TAG, "notePosition: $notePosition")
-        note = DataManager.instance.notes[notePosition]
+        Log.i(TAG, "noteId: $noteId")
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -167,18 +200,18 @@ class NoteActivity : AppCompatActivity() {
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
         val item = menu?.findItem(R.id.action_next)
         val lastNoteIndex = DataManager.instance.notes.size - 1
-        item?.isEnabled = notePosition < lastNoteIndex
+        item?.isEnabled = noteId < lastNoteIndex
         return super.onPrepareOptionsMenu(menu)
     }
 
     private fun moveNext() {
         saveNote()
 
-        notePosition++
-        note = DataManager.instance.notes[notePosition]
+        noteId++
+        note = DataManager.instance.notes[noteId]
 
         saveOriginalNoteValues()
-        displayNote(spinnerCourses, textNoteTitle, textNoteText)
+        displayNote()
         invalidateOptionsMenu()
     }
 

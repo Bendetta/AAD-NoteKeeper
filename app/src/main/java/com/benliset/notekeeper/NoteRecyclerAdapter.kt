@@ -26,18 +26,18 @@ class NoteRecyclerAdapter(private val context: Context, private val notes: List<
         val note = notes[position]
         holder.textCourse.text = note.course?.title
         holder.textTitle.text = note.title
-        holder.currentPosition = position
+        holder.id = note.id ?: -1
     }
 
     inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val textCourse = itemView.findViewById<TextView>(R.id.text_course)
         val textTitle = itemView.findViewById<TextView>(R.id.text_title)
-        var currentPosition = -1
+        var id = -1
 
         init {
             itemView.setOnClickListener { view ->
                 val intent = Intent(context, NoteActivity::class.java)
-                intent.putExtra(NoteActivity.NOTE_POSITION, currentPosition)
+                intent.putExtra(NoteActivity.NOTE_ID, id)
                 context.startActivity(intent)
             }
         }

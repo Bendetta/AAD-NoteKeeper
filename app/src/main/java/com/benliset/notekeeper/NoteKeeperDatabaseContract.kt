@@ -18,6 +18,7 @@ object NoteKeeperDatabaseContract {
         val COLUMN_NOTE_TITLE = "note_title"
         val COLUMN_NOTE_TEXT = "note_text"
         val COLUMN_COURSE_ID = "course_id"
+        val _ID = BaseColumns._ID
 
         val SQL_CREATE_TABLE = "CREATE TABLE $TABLE_NAME (${_ID} INTEGER PRIMARY KEY, $COLUMN_NOTE_TITLE TEXT NOT NULL, $COLUMN_NOTE_TEXT TEXT, $COLUMN_COURSE_ID TEXT NOT NULL)"
     }
