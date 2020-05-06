@@ -9,8 +9,10 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.SimpleCursorAdapter
 import android.widget.Spinner
 import androidx.lifecycle.ViewModelProvider
+import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 
 import kotlinx.android.synthetic.main.activity_note.*
@@ -54,6 +56,8 @@ class NoteActivity : AppCompatActivity() {
         textNoteText
     }
 
+    private lateinit var adapterCourses: SimpleCursorAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_note)
@@ -67,10 +71,16 @@ class NoteActivity : AppCompatActivity() {
         }
         viewModel.isNewlyCreated = false
 
-        val courses = DataManager.instance.courses
-        val adapterCourses = ArrayAdapter<CourseInfo>(this, android.R.layout.simple_spinner_item, courses)
+        adapterCourses =
+            SimpleCursorAdapter(
+                this, android.R.layout.simple_spinner_item, null,
+                arrayOf(CourseInfoEntry.COLUMN_COURSE_TITLE),
+                intArrayOf(android.R.id.text1), 0
+            )
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCourses.adapter = adapterCourses
+
+        loadCourseData()
 
         readDisplayStateValues()
         saveOriginalNoteValues()
@@ -78,6 +88,17 @@ class NoteActivity : AppCompatActivity() {
         loadNoteData()
 
         Log.d(TAG, "onCreate")
+    }
+
+    private fun loadCourseData() {
+        val db = dbOpenHelper.readableDatabase
+        val courseColumns = arrayOf(CourseInfoEntry.COLUMN_COURSE_TITLE,
+            CourseInfoEntry.COLUMN_COURSE_ID,
+            CourseInfoEntry._ID)
+
+        val cursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns,
+            null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE)
+        adapterCourses.changeCursor(cursor)
     }
 
     override fun onDestroy() {
@@ -153,12 +174,29 @@ class NoteActivity : AppCompatActivity() {
         val courseId = noteCursor.getString(courseIdPos)
         val noteTitle = noteCursor.getString(noteTitlePos)
         val noteText = noteCursor.getString(noteTextPos)
-        val courses = DataManager.instance.courses
-        val course = DataManager.instance.getCourse(courseId)
-        val courseIndex = courses.indexOf(course)
+
+        val courseIndex = getIndexOfCourseId(courseId)
         spinnerCourses?.setSelection(courseIndex)
         textNoteTitle?.setText(noteTitle)
         textNoteText?.setText(noteText)
+    }
+
+    private fun getIndexOfCourseId(courseId: String?): Int {
+        val cursor = adapterCourses.cursor
+        val courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID)
+        var courseRowIndex = 0
+
+        var more = cursor.moveToFirst()
+        while (more) {
+            val cursorCourseId = cursor.getString(courseIdPos)
+            if (courseId.equals(cursorCourseId)) {
+                break
+            }
+
+            courseRowIndex++
+            more = cursor.moveToNext()
+        }
+        return courseRowIndex
     }
 
     private fun readDisplayStateValues() {

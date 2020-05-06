@@ -18,6 +18,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -57,9 +58,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onResume() {
         super.onResume()
-        noteRecyclerAdapter.notifyDataSetChanged()
+        loadNotes()
 
         updateNavHeader()
+    }
+
+    private fun loadNotes() {
+        val db = dbOpenHelper.readableDatabase
+        val noteColumns = arrayOf(
+            NoteInfoEntry.COLUMN_NOTE_TITLE,
+            NoteInfoEntry.COLUMN_COURSE_ID,
+            NoteInfoEntry._ID
+        )
+        val noteOrderBy = "${NoteInfoEntry.COLUMN_COURSE_ID}, ${NoteInfoEntry.COLUMN_NOTE_TITLE}"
+        val noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, noteOrderBy)
+        noteRecyclerAdapter.changeCursor(noteCursor)
     }
 
     private fun updateNavHeader() {
@@ -81,8 +94,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         recyclerNotes = findViewById<RecyclerView>(R.id.list_items)
         notesLayoutManager = LinearLayoutManager(this)
         coursesLayoutManager = GridLayoutManager(this, resources.getInteger(R.integer.course_grid_span))
-        val notes = DataManager.instance.notes
-        noteRecyclerAdapter = NoteRecyclerAdapter(this, notes)
+
+        noteRecyclerAdapter = NoteRecyclerAdapter(this, null)
 
         val courses = DataManager.instance.courses
         courseRecyclerAdapter = CourseRecyclerAdapter(this, courses)
