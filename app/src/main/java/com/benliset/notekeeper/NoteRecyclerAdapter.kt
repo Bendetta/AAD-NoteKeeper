@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 import kotlin.properties.Delegates
 
@@ -26,7 +27,7 @@ class NoteRecyclerAdapter(private val context: Context, private var cursor: Curs
     private fun populateColumnPositions() {
         // Get column indexes from cursor
         cursor?.let {
-            coursePos = it.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID)
+            coursePos = it.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE)
             noteTitlePos = it.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE)
             idPos = it.getColumnIndex(NoteInfoEntry._ID)
         }
