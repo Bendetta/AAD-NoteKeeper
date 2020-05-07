@@ -32,7 +32,7 @@ class NoteRecyclerAdapter(private val context: Context, private var cursor: Curs
         }
     }
 
-    public fun changeCursor(cursor: Cursor) {
+    public fun changeCursor(cursor: Cursor?) {
         this.cursor?.close()
         this.cursor = cursor
         populateColumnPositions()

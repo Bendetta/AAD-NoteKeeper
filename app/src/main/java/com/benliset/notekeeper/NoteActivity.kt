@@ -7,23 +7,29 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.SimpleCursorAdapter
 import android.widget.Spinner
 import androidx.lifecycle.ViewModelProvider
+import androidx.loader.app.LoaderManager
+import androidx.loader.content.Loader
+import androidx.loader.content.CursorLoader
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 
 import kotlinx.android.synthetic.main.activity_note.*
 import kotlin.properties.Delegates
 
-class NoteActivity : AppCompatActivity() {
+class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> {
 
     companion object {
         val NOTE_ID = "com.benliset.notekeeper.NOTE_POSITION"
+        val LOADER_NOTES = 0
+        val LOADER_COURSES = 1
     }
 
+    private var notesQueryFinished: Boolean = false
+    private var coursesQueryFinished: Boolean = false
     private val TAG = javaClass.simpleName
     private val ID_NOT_SET = -1
 
@@ -80,12 +86,15 @@ class NoteActivity : AppCompatActivity() {
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCourses.adapter = adapterCourses
 
-        loadCourseData()
+        supportLoaderManager.initLoader(LOADER_COURSES, null, this)
 
         readDisplayStateValues()
         saveOriginalNoteValues()
 
-        loadNoteData()
+        if (!isNewNote) {
+            supportLoaderManager.initLoader(LOADER_NOTES, null, this)
+        }
+        //loadNoteData()
 
         Log.d(TAG, "onCreate")
     }
@@ -158,8 +167,10 @@ class NoteActivity : AppCompatActivity() {
     }
 
     private fun storePreviousNoteValues() {
-        val course = DataManager.instance.getCourse(viewModel.originalCourseNoteId!!)
-        note?.course = course
+        viewModel.originalCourseNoteId?.let {
+            val course = DataManager.instance.getCourse(it)
+            note?.course = course
+        }
         note?.title = viewModel.originalNoteTitle
         note?.text = viewModel.originalNoteText
     }
@@ -263,5 +274,79 @@ class NoteActivity : AppCompatActivity() {
         intent.putExtra(Intent.EXTRA_SUBJECT, subject)
         intent.putExtra(Intent.EXTRA_TEXT, text)
         startActivity(intent)
+    }
+
+    override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
+        if (id == LOADER_NOTES) {
+            return createLoaderNotes()
+        } else { // if (id == LOADER_COURSES)
+            return createLoaderCourses()
+        }
+    }
+
+    private fun createLoaderCourses(): Loader<Cursor> {
+        coursesQueryFinished = false
+        return object: CursorLoader(this) {
+            override fun loadInBackground(): Cursor {
+                val db = dbOpenHelper.readableDatabase
+                val courseColumns = arrayOf(CourseInfoEntry.COLUMN_COURSE_TITLE,
+                    CourseInfoEntry.COLUMN_COURSE_ID,
+                    CourseInfoEntry._ID)
+
+                return db.query(CourseInfoEntry.TABLE_NAME, courseColumns,
+                    null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE)
+            }
+        }
+    }
+
+    private fun createLoaderNotes(): Loader<Cursor> {
+        notesQueryFinished = false
+        return object: CursorLoader(this) {
+            override fun loadInBackground(): Cursor {
+                val db = dbOpenHelper.readableDatabase
+
+                val selection = "${NoteInfoEntry._ID} = ?"
+                val selectionArgs = arrayOf(noteId.toString())
+
+                val noteColumns = arrayOf(NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_NOTE_TEXT)
+                return db.query(NoteInfoEntry.TABLE_NAME, noteColumns, selection, selectionArgs, null, null, null)
+            }
+        }
+    }
+
+    override fun onLoadFinished(loader: Loader<Cursor>, data: Cursor?) {
+        if (loader.id == LOADER_NOTES) {
+            loadFinishedNotes(data)
+        } else if (loader.id == LOADER_COURSES) {
+            adapterCourses.changeCursor(data)
+            coursesQueryFinished = true
+            displayNoteWhenQueriesFinished()
+        }
+    }
+
+    private fun loadFinishedNotes(data: Cursor?) {
+        data?.let {
+            noteCursor = it
+            courseIdPos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID)
+            noteTitlePos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE)
+            noteTextPos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT)
+            noteCursor.moveToNext()
+            notesQueryFinished = true
+            displayNoteWhenQueriesFinished()
+        }
+    }
+
+    private fun displayNoteWhenQueriesFinished() {
+        if (notesQueryFinished && coursesQueryFinished) {
+            displayNote()
+        }
+    }
+
+    override fun onLoaderReset(loader: Loader<Cursor>) {
+        if (loader.id == LOADER_NOTES) {
+            noteCursor.close()
+        } else if (loader.id == LOADER_COURSES) {
+            adapterCourses.changeCursor(null)
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.benliset.notekeeper
 
 import android.content.Intent
+import android.database.Cursor
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -18,9 +19,16 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.loader.app.LoaderManager
+import androidx.loader.content.Loader
+import androidx.loader.content.CursorLoader
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor> {
+
+    companion object {
+        val LOADER_NOTES = 0
+    }
 
     private lateinit var noteRecyclerAdapter: NoteRecyclerAdapter
     private lateinit var courseRecyclerAdapter: CourseRecyclerAdapter
@@ -58,7 +66,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onResume() {
         super.onResume()
-        loadNotes()
+
+        supportLoaderManager.restartLoader(LOADER_NOTES, null, this)
 
         updateNavHeader()
     }
@@ -179,5 +188,33 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun handleSelection(message_id: Int) {
         val view = findViewById<View>(R.id.list_items)
         Snackbar.make(view, message_id, Snackbar.LENGTH_LONG).show()
+    }
+
+    override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
+        // if (id == LOADER_NOTES)
+        return object: CursorLoader(this) {
+            override fun loadInBackground(): Cursor {
+                val db = dbOpenHelper.readableDatabase
+                val noteColumns = arrayOf(
+                    NoteInfoEntry.COLUMN_NOTE_TITLE,
+                    NoteInfoEntry.COLUMN_COURSE_ID,
+                    NoteInfoEntry._ID
+                )
+                val noteOrderBy = "${NoteInfoEntry.COLUMN_COURSE_ID}, ${NoteInfoEntry.COLUMN_NOTE_TITLE}"
+                return db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, noteOrderBy)
+            }
+        }
+    }
+
+    override fun onLoadFinished(loader: Loader<Cursor>, data: Cursor?) {
+        if (loader.id == LOADER_NOTES) {
+            noteRecyclerAdapter.changeCursor(data)
+        }
+    }
+
+    override fun onLoaderReset(loader: Loader<Cursor>) {
+        if (loader.id == LOADER_NOTES) {
+            noteRecyclerAdapter.changeCursor(null)
+        }
     }
 }
