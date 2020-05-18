@@ -3,6 +3,7 @@ package com.benliset.notekeeper
 import android.content.ContentValues
 import android.content.Intent
 import android.database.Cursor
+import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
@@ -324,17 +325,11 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
 
     private fun createLoaderCourses(): Loader<Cursor> {
         coursesQueryFinished = false
-        return object: CursorLoader(this) {
-            override fun loadInBackground(): Cursor {
-                val db = dbOpenHelper.readableDatabase
-                val courseColumns = arrayOf(CourseInfoEntry.COLUMN_COURSE_TITLE,
-                    CourseInfoEntry.COLUMN_COURSE_ID,
-                    CourseInfoEntry._ID)
-
-                return db.query(CourseInfoEntry.TABLE_NAME, courseColumns,
-                    null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE)
-            }
-        }
+        val uri = Uri.parse("content://com.benliset.notekeeper.provider")
+        val courseColumns = arrayOf(CourseInfoEntry.COLUMN_COURSE_TITLE,
+            CourseInfoEntry.COLUMN_COURSE_ID,
+            CourseInfoEntry._ID)
+        return CursorLoader(this, uri, courseColumns, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE)
     }
 
     private fun createLoaderNotes(): Loader<Cursor> {
