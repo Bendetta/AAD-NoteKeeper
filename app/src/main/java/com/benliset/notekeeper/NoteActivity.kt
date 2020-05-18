@@ -1,7 +1,9 @@
 package com.benliset.notekeeper
 
+import android.content.ContentValues
 import android.content.Intent
 import android.database.Cursor
+import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -142,7 +144,12 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
     }
 
     private fun createNewNote() {
-        noteId = DataManager.instance.createNewNote()
+        val values = ContentValues()
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, "")
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, "")
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, "")
+        val db = dbOpenHelper.writableDatabase
+        noteId = db.insert(NoteInfoEntry.TABLE_NAME, null, values).toInt()
     }
 
     override fun onPause() {
@@ -150,7 +157,7 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         if (isCancelling) {
             Log.i(TAG, "Cancelling note at position $noteId")
             if (isNewNote) {
-                DataManager.instance.removeNote(noteId)
+                deleteNoteFromDatabase()
             } else {
                 storePreviousNoteValues()
             }
@@ -159,6 +166,14 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         }
 
         Log.d(TAG, "onPause")
+    }
+
+    private fun deleteNoteFromDatabase() {
+        val selection = "${NoteInfoEntry._ID} = ?"
+        val selectionArgs = arrayOf(noteId.toString())
+        // TODO: Should move this to AsyncTask
+        val db = dbOpenHelper.writableDatabase
+        db.delete(NoteInfoEntry.TABLE_NAME, selection, selectionArgs)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -176,9 +191,32 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
     }
 
     private fun saveNote() {
-        note?.course = spinnerCourses.selectedItem as CourseInfo
-        note?.title = textNoteTitle.text.toString()
-        note?.text = textNoteText.text.toString()
+        val courseId = selectedCourseId()
+        val noteTitle = textNoteTitle.text.toString()
+        val noteText = textNoteText.text.toString()
+        saveNoteToDatabase(courseId, noteTitle, noteText)
+    }
+
+    private fun selectedCourseId(): String {
+        val selectedPosition = spinnerCourses.selectedItemPosition
+        val cursor = adapterCourses.cursor
+        cursor.moveToPosition(selectedPosition)
+        val courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID)
+        val courseId = cursor.getString(courseIdPos)
+        return courseId
+    }
+
+    private fun saveNoteToDatabase(courseId: String, noteTitle: String, noteText: String) {
+        val selection = "${NoteInfoEntry._ID} = ?"
+        val selectionArgs = arrayOf(noteId.toString())
+
+        val values = ContentValues()
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, courseId)
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, noteTitle)
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, noteText)
+
+        val db = dbOpenHelper.writableDatabase
+        db.update(NoteInfoEntry.TABLE_NAME, values, selection, selectionArgs)
     }
 
     private fun displayNote() {
