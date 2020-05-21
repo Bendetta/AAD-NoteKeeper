@@ -1,5 +1,6 @@
 package com.benliset.notekeeper
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Intent
 import android.database.Cursor
@@ -20,6 +21,7 @@ import androidx.loader.content.CursorLoader
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 import com.benliset.notekeeper.NoteKeeperProviderContract.Courses
+import com.benliset.notekeeper.NoteKeeperProviderContract.Notes
 
 import kotlinx.android.synthetic.main.activity_note.*
 import kotlin.properties.Delegates
@@ -41,6 +43,7 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
     private var isNewNote = true
     private var noteId = ID_NOT_SET
     private var isCancelling = false
+    private var noteUri: Uri? = null
 
     private var viewModel = NoteActivityViewModel()
 
@@ -147,11 +150,11 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
 
     private fun createNewNote() {
         val values = ContentValues()
-        values.put(NoteInfoEntry.COLUMN_COURSE_ID, "")
-        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, "")
-        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, "")
-        val db = dbOpenHelper.writableDatabase
-        noteId = db.insert(NoteInfoEntry.TABLE_NAME, null, values).toInt()
+        values.put(Notes.COLUMN_COURSE_ID, "")
+        values.put(Notes.COLUMN_NOTE_TITLE, "")
+        values.put(Notes.COLUMN_NOTE_TEXT, "")
+
+        noteUri = contentResolver.insert(Notes.CONTENT_URI, values)
     }
 
     override fun onPause() {
@@ -335,16 +338,9 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
 
     private fun createLoaderNotes(): Loader<Cursor> {
         notesQueryFinished = false
-        return object: CursorLoader(this) {
-            override fun loadInBackground(): Cursor {
-                val db = dbOpenHelper.readableDatabase
-
-                val selection = "${NoteInfoEntry._ID} = ?"
-                val selectionArgs = arrayOf(noteId.toString())
-
-                val noteColumns = arrayOf(NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_NOTE_TEXT)
-                return db.query(NoteInfoEntry.TABLE_NAME, noteColumns, selection, selectionArgs, null, null, null)
-            }
+        val noteColumns = arrayOf(Notes.COLUMN_COURSE_ID, Notes.COLUMN_NOTE_TITLE, Notes.COLUMN_NOTE_TEXT)
+        noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, noteId.toLong()).let {
+            return CursorLoader(this, it, noteColumns, null, null, null)
         }
     }
 

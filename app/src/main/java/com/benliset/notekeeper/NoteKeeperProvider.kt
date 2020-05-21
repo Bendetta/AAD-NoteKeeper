@@ -1,8 +1,6 @@
 package com.benliset.notekeeper
 
-import android.content.ContentProvider
-import android.content.ContentValues
-import android.content.UriMatcher
+import android.content.*
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
@@ -18,6 +16,8 @@ class NoteKeeperProvider : ContentProvider() {
         val COURSES = 0
         val NOTES = 1
         val NOTES_EXPANDED = 2
+        val NOTES_ROW = 3
+        val MIME_VENDOR_TYPE = "vnd.${NoteKeeperProviderContract.AUTHORITY}."
     }
 
     private lateinit var dbOpenHelper: NoteKeeperOpenHelper
@@ -28,6 +28,7 @@ class NoteKeeperProvider : ContentProvider() {
         uriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Courses.PATH, COURSES)
         uriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH, NOTES)
         uriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH_EXPANDED, NOTES_EXPANDED)
+        uriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, "${Notes.PATH}/#", NOTES_ROW)
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<String>?): Int {
@@ -35,14 +36,45 @@ class NoteKeeperProvider : ContentProvider() {
     }
 
     override fun getType(uri: Uri): String? {
-        TODO(
-            "Implement this to handle requests for the MIME type of the data" +
-                    "at the given URI"
-        )
+        var mimeType: String? = null
+        val uriMatch = uriMatcher.match(uri)
+        when(uriMatch) {
+            COURSES -> {
+                mimeType = "${ContentResolver.CURSOR_DIR_BASE_TYPE}/${MIME_VENDOR_TYPE}${Courses.PATH}"
+            }
+            NOTES -> {
+                mimeType = "${ContentResolver.CURSOR_DIR_BASE_TYPE}/${MIME_VENDOR_TYPE}${Notes.PATH}"
+            }
+            NOTES_EXPANDED -> {
+                mimeType = "${ContentResolver.CURSOR_DIR_BASE_TYPE}/${MIME_VENDOR_TYPE}${Notes.PATH_EXPANDED}"
+            }
+            NOTES_ROW -> {
+                mimeType = "${ContentResolver.CURSOR_ITEM_BASE_TYPE}/${MIME_VENDOR_TYPE}${Notes.PATH}"
+            }
+        }
+        return mimeType
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
-        TODO("Implement this to handle requests to insert a new row.")
+        val db = dbOpenHelper.writableDatabase
+        var rowId: Long = -1
+        var rowUri: Uri? = null
+        val uriMatch = uriMatcher.match(uri)
+        when (uriMatch) {
+            NOTES -> {
+                rowId = db.insert(NoteInfoEntry.TABLE_NAME, null, values)
+                rowUri = ContentUris.withAppendedId(Notes.CONTENT_URI, rowId)
+            }
+            COURSES -> {
+                rowId = db.insert(CourseInfoEntry.TABLE_NAME, null, values)
+                rowUri = ContentUris.withAppendedId(Courses.CONTENT_URI, rowId)
+            }
+            NOTES_EXPANDED -> {
+
+            }
+        }
+
+        return rowUri
     }
 
     override fun onCreate(): Boolean {
@@ -67,6 +99,12 @@ class NoteKeeperProvider : ContentProvider() {
             }
             NOTES_EXPANDED -> {
                 cursor = notesExpandedQuery(db, projection, selection, selectionArgs, sortOrder)
+            }
+            NOTES_ROW -> {
+                val rowId = ContentUris.parseId(uri)
+                val rowSelection = "${NoteInfoEntry._ID} = ?"
+                val rowSelectionArgs = arrayOf(rowId.toString())
+                cursor = db.query(NoteInfoEntry.TABLE_NAME, projection, rowSelection, rowSelectionArgs, null, null, null)
             }
         }
         return cursor
