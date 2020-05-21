@@ -24,6 +24,7 @@ import androidx.loader.content.Loader
 import androidx.loader.content.CursorLoader
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
+import com.benliset.notekeeper.NoteKeeperProviderContract.Notes
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -193,20 +194,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
         // if (id == LOADER_NOTES)
-        return object: CursorLoader(this) {
-            override fun loadInBackground(): Cursor {
-                val db = dbOpenHelper.readableDatabase
-                val noteColumns = arrayOf(
-                    NoteInfoEntry.getQName(NoteInfoEntry._ID),
-                    NoteInfoEntry.COLUMN_NOTE_TITLE,
-                    CourseInfoEntry.COLUMN_COURSE_TITLE
-                )
+        val noteColumns = arrayOf(
+            Notes._ID,
+            Notes.COLUMN_NOTE_TITLE,
+            Notes.COLUMN_COURSE_TITLE
+        )
 
-                val noteOrderBy = "${CourseInfoEntry.COLUMN_COURSE_TITLE}, ${NoteInfoEntry.COLUMN_NOTE_TITLE}"
-                val tablesWithJoin = "${NoteInfoEntry.TABLE_NAME} JOIN ${CourseInfoEntry.TABLE_NAME} ON ${NoteInfoEntry.getQName(NoteInfoEntry.COLUMN_COURSE_ID)} = ${CourseInfoEntry.getQName(CourseInfoEntry.COLUMN_COURSE_ID)}"
-                return db.query(tablesWithJoin, noteColumns, null, null, null, null, noteOrderBy)
-            }
-        }
+        val noteOrderBy = "${Notes.COLUMN_COURSE_TITLE}, ${Notes.COLUMN_NOTE_TITLE}"
+        return CursorLoader(this, Notes.CONTENT_EXPANDED_URI, noteColumns, null, null, noteOrderBy)
     }
 
     override fun onLoadFinished(loader: Loader<Cursor>, data: Cursor?) {

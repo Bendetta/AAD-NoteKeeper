@@ -19,6 +19,7 @@ import androidx.loader.content.Loader
 import androidx.loader.content.CursorLoader
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
+import com.benliset.notekeeper.NoteKeeperProviderContract.Courses
 
 import kotlinx.android.synthetic.main.activity_note.*
 import kotlin.properties.Delegates
@@ -325,11 +326,11 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
 
     private fun createLoaderCourses(): Loader<Cursor> {
         coursesQueryFinished = false
-        val uri = Uri.parse("content://com.benliset.notekeeper.provider")
-        val courseColumns = arrayOf(CourseInfoEntry.COLUMN_COURSE_TITLE,
-            CourseInfoEntry.COLUMN_COURSE_ID,
-            CourseInfoEntry._ID)
-        return CursorLoader(this, uri, courseColumns, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE)
+        val uri = Courses.CONTENT_URI
+        val courseColumns = arrayOf(Courses.COLUMN_COURSE_TITLE,
+            Courses.COLUMN_COURSE_ID,
+            Courses._ID)
+        return CursorLoader(this, uri, courseColumns, null, null, Courses.COLUMN_COURSE_TITLE)
     }
 
     private fun createLoaderNotes(): Loader<Cursor> {
