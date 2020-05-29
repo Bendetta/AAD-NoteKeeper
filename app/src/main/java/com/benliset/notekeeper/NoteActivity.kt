@@ -2,6 +2,7 @@ package com.benliset.notekeeper
 
 import android.content.ContentUris
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
@@ -11,7 +12,9 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.SimpleCursorAdapter
 import android.widget.Spinner
 import androidx.lifecycle.ViewModelProvider
@@ -22,8 +25,10 @@ import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 import com.benliset.notekeeper.NoteKeeperProviderContract.Courses
 import com.benliset.notekeeper.NoteKeeperProviderContract.Notes
+import com.google.android.material.snackbar.Snackbar
 
 import kotlinx.android.synthetic.main.activity_note.*
+import kotlinx.coroutines.coroutineScope
 import kotlin.properties.Delegates
 
 class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> {
@@ -154,7 +159,41 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         values.put(Notes.COLUMN_NOTE_TITLE, "")
         values.put(Notes.COLUMN_NOTE_TEXT, "")
 
-        noteUri = contentResolver.insert(Notes.CONTENT_URI, values)
+        Log.d(TAG, "Call to execute - thread: ${Thread.currentThread().id}")
+        CreateNewNoteAsyncTask().execute(values)
+    }
+
+    private inner class CreateNewNoteAsyncTask: AsyncTask<ContentValues, Int, Uri?>() {
+        private lateinit var progressBar: ProgressBar
+
+        override fun onPreExecute() {
+            progressBar = findViewById(R.id.progress_bar)
+            progressBar.visibility = View.VISIBLE
+            progressBar.progress = 1
+        }
+        override fun doInBackground(vararg params: ContentValues?): Uri? {
+            Log.d(TAG, "doInBackground - thread: ${Thread.currentThread().id}")
+            val insertValues = params[0]
+            val rowUri = contentResolver.insert(Notes.CONTENT_URI, insertValues)
+            simulateLongRunningWork()
+            publishProgress(2)
+
+            simulateLongRunningWork()
+            publishProgress(3)
+            return rowUri
+        }
+
+        override fun onProgressUpdate(vararg values: Int?) {
+            val progressValue = values[0]!!
+            progressBar.progress = progressValue
+        }
+
+        override fun onPostExecute(result: Uri?) {
+            Log.d(TAG, "onPostExecute - thread: ${Thread.currentThread().id}")
+            noteUri = result
+            displaySnackbar(noteUri.toString())
+            progressBar.visibility = View.GONE
+        }
     }
 
     override fun onPause() {
@@ -261,6 +300,17 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         }
 
         Log.i(TAG, "noteId: $noteId")
+    }
+
+    private fun displaySnackbar(message: String) {
+        val view = findViewById<View>(R.id.spinner_courses)
+        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show()
+    }
+
+    private fun simulateLongRunningWork() {
+        try {
+            Thread.sleep(2000);
+        } catch(ex: Exception) {}
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

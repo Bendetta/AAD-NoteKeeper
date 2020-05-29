@@ -3,6 +3,9 @@ package com.benliset.notekeeper
 import android.content.Intent
 import android.database.Cursor
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.StrictMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -45,6 +48,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        enableStrictMode()
+
         dbOpenHelper = NoteKeeperOpenHelper(this)
         val fab: FloatingActionButton = findViewById(R.id.fab)
         fab.setOnClickListener { view ->
@@ -61,6 +66,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         initializeDisplayContent()
     }
 
+    private fun enableStrictMode() {
+        if (BuildConfig.DEBUG) {
+            val policy = StrictMode.ThreadPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build()
+            StrictMode.setThreadPolicy(policy)
+        }
+    }
+
     override fun onDestroy() {
         dbOpenHelper.close()
         super.onDestroy()
@@ -68,10 +83,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onResume() {
         super.onResume()
-
         supportLoaderManager.restartLoader(LOADER_NOTES, null, this)
-
         updateNavHeader()
+
+        openDrawer()
+    }
+
+    private fun openDrawer() {
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed(Runnable {
+            val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
+            drawer.openDrawer(GravityCompat.START)
+        }, 1000)
     }
 
     private fun loadNotes() {
