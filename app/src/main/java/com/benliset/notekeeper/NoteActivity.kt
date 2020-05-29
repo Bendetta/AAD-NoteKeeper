@@ -284,9 +284,18 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
             R.id.action_next -> {
                 moveNext()
             }
+            R.id.action_set_reminder -> {
+                showReminderNotification()
+            }
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun showReminderNotification() {
+        val noteTitle = textNoteTitle.text.toString()
+        val noteText = textNoteText.text.toString()
+        NoteReminderNotification.notify(this, noteTitle, noteText, 0)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
