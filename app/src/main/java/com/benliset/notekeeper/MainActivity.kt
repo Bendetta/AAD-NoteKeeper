@@ -1,11 +1,12 @@
 package com.benliset.notekeeper
 
+import android.app.job.JobInfo
+import android.app.job.JobScheduler
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.database.Cursor
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.StrictMode
+import android.os.*
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -28,6 +29,8 @@ import androidx.loader.content.CursorLoader
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry
 import com.benliset.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry
 import com.benliset.notekeeper.NoteKeeperProviderContract.Notes
+
+const val NOTE_UPLOADER_JOB_ID = 1
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -181,8 +184,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.action_backup_notes -> {
                 backupNotes()
             }
+            R.id.action_upload_notes -> {
+                scheduleNoteUpload()
+            }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun scheduleNoteUpload() {
+        val extras = PersistableBundle()
+        extras.putString(NoteUploaderJobService.EXTRA_DATA_URI, Notes.CONTENT_URI.toString())
+
+        val componentName = ComponentName(this, NoteUploaderJobService::class.java)
+        val jobInfo = JobInfo.Builder(NOTE_UPLOADER_JOB_ID, componentName)
+            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+            .setExtras(extras)
+            .build()
+
+        val jobScheduler = getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+        jobScheduler.schedule(jobInfo)
     }
 
     private fun backupNotes() {
