@@ -57,6 +57,10 @@ object NoteReminderNotification {
         //val picture = BitmapFactory.decodeResource(res, R.drawable.logo)
         val noteActivityIntent = Intent(context, NoteActivity::class.java)
         noteActivityIntent.putExtra(NoteActivity.NOTE_ID, noteId)
+
+        val backupServiceIntent = Intent(context, NoteBackupService::class.java)
+        backupServiceIntent.putExtra(NoteBackupService.EXTRA_COURSE_ID, NoteBackup.ALL_COURSES)
+
         val builder: NotificationCompat.Builder =
             NotificationCompat.Builder(context, CHANNEL_ID) // Set appropriate defaults for the notification light, sound,
                 // and vibration.
@@ -101,6 +105,16 @@ object NoteReminderNotification {
                         context,
                         0,
                         Intent(context, MainActivity::class.java),
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                )
+                .addAction(
+                    0,
+                    "Backup notes",
+                    PendingIntent.getService(
+                        context,
+                        0,
+                        backupServiceIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 ) // Automatically dismiss the notification when it is touched.

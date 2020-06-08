@@ -178,8 +178,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startActivity(Intent(this, SettingsActivity::class.java))
                 return true
             }
+            R.id.action_backup_notes -> {
+                backupNotes()
+            }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun backupNotes() {
+        val intent = Intent(this, NoteBackupService::class.java)
+        intent.putExtra(NoteBackupService.EXTRA_COURSE_ID, NoteBackup.ALL_COURSES)
+        startService(intent)
     }
 
     override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
