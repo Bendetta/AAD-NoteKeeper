@@ -272,6 +272,8 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         spinnerCourses?.setSelection(courseIndex)
         textNoteTitle?.setText(noteTitle)
         textNoteText?.setText(noteText)
+
+        CourseEventBroadcastHelper.sendEventBroadcast(this, courseId, "Editing Note")
     }
 
     private fun getIndexOfCourseId(courseId: String?): Int {
