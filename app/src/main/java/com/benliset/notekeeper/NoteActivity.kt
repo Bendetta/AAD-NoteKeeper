@@ -1,5 +1,7 @@
 package com.benliset.notekeeper
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -8,6 +10,7 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
@@ -347,7 +350,23 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
     private fun showReminderNotification() {
         val noteTitle = textNoteTitle.text.toString()
         val noteText = textNoteText.text.toString()
-        NoteReminderNotification.notify(this, noteTitle, noteText, 0)
+        val noteId = noteId
+
+        val intent = Intent(this, NoteReminderReceiver::class.java)
+        intent.putExtra(NoteReminderReceiver.EXTRA_NOTE_TITLE, noteTitle)
+        intent.putExtra(NoteReminderReceiver.EXTRA_NOTE_TEXT, noteText)
+        intent.putExtra(NoteReminderReceiver.EXTRA_NOTE_ID, noteId)
+
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val currentTimeInMilliseconds = SystemClock.elapsedRealtime()
+        val ONE_HOUR = 60 * 60 * 1000
+        val TEN_SECONDS = 10 * 1000
+
+        val alarmTime = currentTimeInMilliseconds + TEN_SECONDS
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME, alarmTime, pendingIntent)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
