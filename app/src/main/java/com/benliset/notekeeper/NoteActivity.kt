@@ -89,6 +89,7 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
 
         if (viewModel.isNewlyCreated && savedInstanceState != null) {
             viewModel.restoreState(savedInstanceState!!)
+            noteUri = Uri.parse(viewModel.noteUri)
         }
         viewModel.isNewlyCreated = false
 
