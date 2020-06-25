@@ -8,13 +8,18 @@ import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.text.TextPaint
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import kotlin.properties.Delegates
 
 const val EDIT_MODE_MODULE_COUNT = 7
+const val INVALID_INDEX = -1
+const val SHAPE_CIRCLE = 0
+const val DEFAULT_OUTLINE_WIDTH_DP = 2f
 
 class ModuleStatusView : View {
 
+    private var shape by Delegates.notNull<Int>()
     var moduleStatus = BooleanArray(0)
     private var outlineWidth by Delegates.notNull<Float>()
     private var shapeSize by Delegates.notNull<Float>()
@@ -47,19 +52,26 @@ class ModuleStatusView : View {
         if (isInEditMode) {
             setupEditModeValues()
         }
+
+        val dm = context.resources.displayMetrics
+        val displayDensity = dm.density
+        val defaultOutlineWidthPixels = displayDensity * DEFAULT_OUTLINE_WIDTH_DP
+
         // Load attributes
         val a = context.obtainStyledAttributes(
             attrs, R.styleable.ModuleStatusView, defStyle, 0
         )
 
+        outlineColor = a.getColor(R.styleable.ModuleStatusView_outlineColor, Color.BLACK)
+        shape = a.getInt(R.styleable.ModuleStatusView_shape, SHAPE_CIRCLE)
+        outlineWidth = a.getDimension(R.styleable.ModuleStatusView_outlineWidth, defaultOutlineWidthPixels)
+
         a.recycle()
 
-        outlineWidth = 6f
         shapeSize = 144f
         spacing = 30f
         radius = (shapeSize - outlineWidth) / 2
 
-        outlineColor = Color.BLACK
         paintOutline = Paint(Paint.ANTI_ALIAS_FLAG)
         paintOutline.style = Paint.Style.STROKE
         paintOutline.strokeWidth = outlineWidth
@@ -121,14 +133,68 @@ class ModuleStatusView : View {
         super.onDraw(canvas)
 
         for (moduleIndex in 0 until (moduleStatus.size)) {
-            val x = moduleRectangles[moduleIndex].centerX().toFloat()
-            val y = moduleRectangles[moduleIndex].centerY().toFloat()
+            if (shape == SHAPE_CIRCLE) {
+                val x = moduleRectangles[moduleIndex].centerX().toFloat()
+                val y = moduleRectangles[moduleIndex].centerY().toFloat()
 
-            if (moduleStatus[moduleIndex]) {
-                canvas.drawCircle(x, y, radius, paintFill)
+                if (moduleStatus[moduleIndex]) {
+                    canvas.drawCircle(x, y, radius, paintFill)
+                }
+
+                canvas.drawCircle(x, y, radius, paintOutline)
+            } else {
+                drawSquare(canvas, moduleIndex)
             }
-
-            canvas.drawCircle(x, y, radius, paintOutline)
         }
+    }
+
+    private fun drawSquare(canvas: Canvas, moduleIndex: Int) {
+        val moduleRectangle = moduleRectangles[moduleIndex]
+
+        if (moduleStatus[moduleIndex]) {
+            canvas.drawRect(moduleRectangle, paintFill)
+        }
+
+        val thickness = outlineWidth/2
+        canvas.drawRect(moduleRectangle.left + thickness,
+            moduleRectangle.top + thickness,
+            moduleRectangle.right - thickness,
+            moduleRectangle.bottom - thickness,
+            paintOutline)
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                val moduleIndex = findItemAtPoint(event.x, event.y)
+                onModuleSelected(moduleIndex)
+                return true
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    private fun onModuleSelected(moduleIndex: Int) {
+        if (moduleIndex == INVALID_INDEX) {
+            return
+        }
+
+        moduleStatus[moduleIndex] = !moduleStatus[moduleIndex]
+        invalidate()
+    }
+
+    private fun findItemAtPoint(x: Float, y: Float): Int {
+        var moduleIndex = INVALID_INDEX
+        for (i in moduleRectangles.indices) {
+            if (moduleRectangles[i].contains(x.toInt(), y.toInt())) {
+                moduleIndex = i
+                break
+            }
+        }
+
+        return moduleIndex
     }
 }

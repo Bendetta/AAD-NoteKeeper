@@ -31,6 +31,7 @@ import com.benliset.notekeeper.NoteKeeperProviderContract.Notes
 import com.google.android.material.snackbar.Snackbar
 
 import kotlinx.android.synthetic.main.activity_note.*
+import kotlinx.android.synthetic.main.content_note.view.*
 import kotlinx.coroutines.coroutineScope
 import kotlin.properties.Delegates
 
@@ -42,6 +43,7 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         val LOADER_COURSES = 1
     }
 
+    private lateinit var viewModuleStatus: ModuleStatusView
     private var notesQueryFinished: Boolean = false
     private var coursesQueryFinished: Boolean = false
     private val TAG = javaClass.simpleName
@@ -110,9 +112,21 @@ class NoteActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         if (!isNewNote) {
             supportLoaderManager.initLoader(LOADER_NOTES, null, this)
         }
-        //loadNoteData()
+
+        viewModuleStatus = findViewById(R.id.module_status)
+        loadModuleStatusValues()
 
         Log.d(TAG, "onCreate")
+    }
+
+    private fun loadModuleStatusValues() {
+        val totalNumberOfModules = 11
+        val completedNumberOfModules = 7
+        val moduleStatus = BooleanArray(totalNumberOfModules) {
+            it < completedNumberOfModules
+        }
+
+        viewModuleStatus.moduleStatus = moduleStatus
     }
 
     private fun loadCourseData() {
